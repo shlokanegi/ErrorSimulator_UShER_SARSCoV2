@@ -12,7 +12,7 @@ def parse_reference(refpath):
     return "".join(refstr)
 
 
-def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_node_DNA_sequence, transition_matrix, base_to_idx_mapping):
+def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_node_DNA_sequence, transition_matrix, base_to_idx_mapping, reference_genome):
   '''
   Description: Follows DFS to traverse each node in the tree.
 
@@ -68,25 +68,25 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
             transition_counts = transition_matrix[base_to_idx_mapping[current_ref_base]]
             transition_counts = transition_counts / transition_counts.sum()
             current_alt_base = np.random.choice(['A', 'T', 'C', 'G'], p=transition_counts)   # we have sampled the `current_alt_base` using the transition probability matrix
-            #    a t g c
-            # a:[ , , , ]
-            # t:[ , , , ]
-            # g:[ , , , ]
-            # c:[ , , , ]
-            
             error_transition_matrix[base_to_idx_mapping[current_ref_base]][base_to_idx_mapping[current_alt_base]] += 1
             current_node_mutations.append(''.join([current_ref_base, str(error_site_idx), current_alt_base]))
             break
+
+      print(f"Errors added: {current_node_mutations[-num_errors:]}")
+      current_node.update_mutations(current_node_mutations)
+      transition_matrix = transition_matrix + error_transition_matrix
+      print(f"No. of mutations after error addition: {len(current_node.mutations)}")
+      print()
+        
   
   
   ## If current_node is not a leaf node
   else:
     for child_node in current_node.children:
-      dfs_traversal_for_error_addition(child_node, sample_leaf_nodes, current_node_DNA_sequence, transition_matrix, base_to_idx_mapping)
+      dfs_traversal_for_error_addition(child_node, sample_leaf_nodes, current_node_DNA_sequence, transition_matrix, base_to_idx_mapping, reference_genome)
 
   
   ## update `current_node_DNA_sequence` and `transition_matrix` here
-  # current_node_DNA_sequence = previous_node_DNA_sequence
   for mutation in current_node.mutations:
     mutation_index = int(mutation[1:-1])  # assuming 0-indexing
     ref_base = mutation[0]
@@ -101,7 +101,7 @@ def main():
   reference_genome = parse_reference(refpath = '/home/shloka/data/newref.fa') # input from argparser
   node_list = mat.depth_first_expansion()
   tree_mutation_count = sum([len(node.mutations) for node in node_list])
-  expected_error_count = error_rate * tree_mutation_count
+  expected_error_count = (error_rate * tree_mutation_count)/100
   error_count = poisson.rvs(expected_error_count)
 
   print(f"Total number of errors being incorporated: {error_count}\n")
@@ -129,6 +129,5 @@ def main():
   return 
 
 mat = bte.MATree(pb_file = '/home/shloka/data/phastSim_output/sars-cov-2_simulation_output.mat.pb')
-error_rate = 10 # in percentage (will be taken as input)
+error_rate = 0.1 # in percentage (will be taken as input)
 main()
-
