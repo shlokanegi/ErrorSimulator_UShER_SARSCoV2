@@ -44,6 +44,9 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
     ## update `current_node_DNA_sequence` and `transition_matrix` here
       current_node_DNA_sequence = previous_node_DNA_sequence
       for mutation in current_node.mutations:
+        mutation_list = mutation.split(":")
+        mutation = mutation_list[-1]
+
         mutation_index = int(mutation[1:-1])  # assuming 0-indexing
         ref_base = mutation[0]
         alt_base = mutation[-1]
@@ -55,7 +58,7 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
   if current_node.id in sample_leaf_nodes:
     num_errors = sample_leaf_nodes[current_node.id]
     if(num_errors != 0):
-      print(f"No. of mutations for nodeID {current_node.id} is {len(current_node.mutations)}.\nNo. of errors to be incorporated: {num_errors}")
+      # print(f"No. of mutations for nodeID {current_node.id} is {len(current_node.mutations)}.\nNo. of errors to be incorporated: {num_errors}")
       current_node_mutations = current_node.mutations
 
       error_transition_matrix = np.zeros((4, 4))
@@ -69,11 +72,14 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
             transition_counts = transition_counts / transition_counts.sum()
             current_alt_base = np.random.choice(['A', 'T', 'C', 'G'], p=transition_counts)   # we have sampled the `current_alt_base` using the transition probability matrix
             error_transition_matrix[base_to_idx_mapping[current_ref_base]][base_to_idx_mapping[current_alt_base]] += 1
-            current_node_mutations.append(''.join([current_ref_base, str(error_site_idx), current_alt_base]))
+            current_node_mutations.append(''.join(["NC_045512v2:", current_ref_base, str(error_site_idx), current_alt_base]))
+            # current_node_mutations.append(''.join([current_ref_base, str(error_site_idx), current_alt_base]))
             break
 
       print(f"Errors added: {current_node_mutations[-num_errors:]}")
+      # print("Non-updated mutation list: ", current_node.mutations)
       current_node.update_mutations(current_node_mutations)
+      # print("Updated mutation list: ", current_node.mutations)
       transition_matrix = transition_matrix + error_transition_matrix
       print(f"No. of mutations after error addition: {len(current_node.mutations)}")
       print()
@@ -88,6 +94,9 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
   
   ## update `current_node_DNA_sequence` and `transition_matrix` here
   for mutation in current_node.mutations:
+    mutation_list = mutation.split(":")
+    mutation = mutation_list[-1]
+
     mutation_index = int(mutation[1:-1])  # assuming 0-indexing
     ref_base = mutation[0]
     alt_base = mutation[-1]
@@ -126,8 +135,10 @@ def main():
   transition_matrix = np.ones((4, 4))
   dfs_traversal_for_error_addition(mat.root, sample_leaf_nodes, sequence, transition_matrix, base_to_idx_mapping, reference_genome)  
   
+  # mat.write_vcf(vcf_file = "subtree_errors.vcf")
   return 
 
 mat = bte.MATree(pb_file = '/home/shloka/data/phastSim_output/sars-cov-2_simulation_output.mat.pb')
-error_rate = 0.1 # in percentage (will be taken as input)
+error_rate = 0.01 # in percentage (will be taken as input)
 main()
+
