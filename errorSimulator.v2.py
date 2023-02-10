@@ -58,7 +58,7 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
   if current_node.id in sample_leaf_nodes:
     num_errors = sample_leaf_nodes[current_node.id]
     if(num_errors != 0):
-      # print(f"No. of mutations for nodeID {current_node.id} is {len(current_node.mutations)}.\nNo. of errors to be incorporated: {num_errors}")
+      print(f"No. of mutations for nodeID {current_node.id} is {len(current_node.mutations)}.\nNo. of errors to be incorporated: {num_errors}")
       current_node_mutations = current_node.mutations
 
       error_transition_matrix = np.zeros((4, 4))
@@ -86,7 +86,7 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
         
   
   
-  ## If current_node is not a leaf node
+  ## If current_node is n ot a leaf node
   else:
     for child_node in current_node.children:
       dfs_traversal_for_error_addition(child_node, sample_leaf_nodes, current_node_DNA_sequence, transition_matrix, base_to_idx_mapping, reference_genome)
@@ -135,7 +135,7 @@ def main():
   transition_matrix = np.ones((4, 4))
   dfs_traversal_for_error_addition(mat.root, sample_leaf_nodes, sequence, transition_matrix, base_to_idx_mapping, reference_genome)  
   
-  # mat.write_vcf(vcf_file = "subtree_errors.vcf")
+  mat.write_vcf(vcf_file = "subtree_errors.vcf")
   return 
 
 mat = bte.MATree(pb_file = '/home/shloka/data/phastSim_output/sars-cov-2_simulation_output.mat.pb')
