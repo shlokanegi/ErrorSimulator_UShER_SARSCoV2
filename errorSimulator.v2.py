@@ -77,14 +77,14 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
             break
 
       print(f"Errors added: {current_node_mutations[-num_errors:]}")
-      # print("Non-updated mutation list: ", current_node.mutations)
+      print("Non-updated mutation list: ", current_node.mutations)
       current_node.update_mutations(current_node_mutations)
-      # print("Updated mutation list: ", current_node.mutations)
+      print("Updated mutation list: ", current_node.mutations)
+      print("Mutation information of the leaf after updating mutation list with errors: ", current_node.get_mutation_information())
       transition_matrix = transition_matrix + error_transition_matrix
       print(f"No. of mutations after error addition: {len(current_node.mutations)}")
       print()
         
-  
   
   ## If current_node is n ot a leaf node
   else:
@@ -122,8 +122,6 @@ def main():
 
   # Sampling the nodes using the probability distribution, and have created `sample_leaf_nodes`
   leaf_ids = np.array(list(leaf_mutation_count_dict.keys()))
-  leaf_mutation_counts = np.array(list(leaf_mutation_count_dict.values()))
-  sum_leaf_mutations = sum(leaf_mutation_counts)
 
   sample_leaf_ids = list(np.random.choice(leaf_ids, size=error_count))
   sample_leaf_nodes = {x:sample_leaf_ids.count(x) for x in sample_leaf_ids}
@@ -135,10 +133,11 @@ def main():
   transition_matrix = np.ones((4, 4))
   dfs_traversal_for_error_addition(mat.root, sample_leaf_nodes, sequence, transition_matrix, base_to_idx_mapping, reference_genome)  
   
-  mat.write_vcf(vcf_file = "subtree_errors.vcf")
+  # mat.write_vcf(vcf_file = "subtree_errors.vcf") #Write into VCF - with original mutations + errors
+  mat.save_pb("subtree_random_errors.pb.gz") #Write into a protobuf - with original mutations + errors
   return 
 
 mat = bte.MATree(pb_file = '/home/shloka/data/phastSim_output/sars-cov-2_simulation_output.mat.pb')
-error_rate = 0.01 # in percentage (will be taken as input)
+error_rate = 0.001 # in percentage (will be taken as input)
 main()
 
