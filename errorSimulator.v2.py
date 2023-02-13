@@ -1,4 +1,4 @@
-## Sampling Leaves using Error counts estimated by Poisson Distribution
+## Sampling Leaves using Error counts estimated by Poisson Distribution - Fixing the CHROM column issue
 import bte
 import numpy as np
 from scipy.stats import poisson
@@ -10,6 +10,13 @@ def parse_reference(refpath):
             if entry[0] != ">":
                 refstr.append(entry.strip())
     return "".join(refstr)
+
+
+def chromosome_update_to_mutations(node_list):
+  for current_node in node_list:
+    mutations = current_node.mutations #[A2G, T3462G, ...., etc.]
+    mutation_with_chromosome_list = ['NC_045512v2:'+mutation for mutation in mutations]
+    current_node.update_mutations(mutation_with_chromosome_list)
 
 
 def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_node_DNA_sequence, transition_matrix, base_to_idx_mapping, reference_genome):
@@ -80,13 +87,13 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
       print("Non-updated mutation list: ", current_node.mutations)
       current_node.update_mutations(current_node_mutations)
       print("Updated mutation list: ", current_node.mutations)
-      print("Mutation information of the leaf after updating mutation list with errors: ", current_node.get_mutation_information())
+      # print("Mutation information of the leaf after updating mutation list with errors: ", current_node.get_mutation_information())
       transition_matrix = transition_matrix + error_transition_matrix
       print(f"No. of mutations after error addition: {len(current_node.mutations)}")
       print()
         
   
-  ## If current_node is n ot a leaf node
+  ## If current_node is not a leaf node
   else:
     for child_node in current_node.children:
       dfs_traversal_for_error_addition(child_node, sample_leaf_nodes, current_node_DNA_sequence, transition_matrix, base_to_idx_mapping, reference_genome)
@@ -107,8 +114,13 @@ def dfs_traversal_for_error_addition(current_node, sample_leaf_nodes, previous_n
 
 
 def main():
+
   reference_genome = parse_reference(refpath = '/home/shloka/data/newref.fa') # input from argparser
   node_list = mat.depth_first_expansion()
+  
+  ## Updating tree with CHROM:mutation
+  chromosome_update_to_mutations(node_list)
+
   tree_mutation_count = sum([len(node.mutations) for node in node_list])
   expected_error_count = (error_rate * tree_mutation_count)/100
   error_count = poisson.rvs(expected_error_count)
@@ -133,11 +145,12 @@ def main():
   transition_matrix = np.ones((4, 4))
   dfs_traversal_for_error_addition(mat.root, sample_leaf_nodes, sequence, transition_matrix, base_to_idx_mapping, reference_genome)  
   
-  # mat.write_vcf(vcf_file = "subtree_errors.vcf") #Write into VCF - with original mutations + errors
-  mat.save_pb("subtree_random_errors.pb.gz") #Write into a protobuf - with original mutations + errors
+  mat.write_vcf(vcf_file = "subtree_random_errors.vcf") #Write into VCF - with original mutations + errors
+  mat.save_pb("subtree_random_errors.pb") #Write into a protobuf - with original mutations + errors
   return 
 
-mat = bte.MATree(pb_file = '/home/shloka/data/phastSim_output/sars-cov-2_simulation_output.mat.pb')
-error_rate = 0.001 # in percentage (will be taken as input)
-main()
 
+mat = bte.MATree(pb_file = '/home/shloka/data/phastSim_output_scaled/sars-cov-2_simulation_output.mat.pb') # with phastSim scale parameter = 0.1
+
+error_rate = 0.1 # in percentage (will be taken as input)
+main()
