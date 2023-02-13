@@ -1,18 +1,26 @@
-## Sampling Leaves using Error counts estimated by Poisson Distribution - Fixing the CHROM column issue
+## Sampling Leaves using Error counts estimated by Poisson Distribution - Fixing the CHROM column issue and argparser
 import bte
 import numpy as np
 from scipy.stats import poisson
+import argparse
 
 def parse_reference(refpath):
-    refstr = []
-    with open(refpath) as inf:
-        for entry in inf:
-            if entry[0] != ">":
-                refstr.append(entry.strip())
-    return "".join(refstr)
+  '''
+  Parse reference genome to store in a string format
+  '''
+  refstr = []
+  with open(refpath) as inf:
+      for entry in inf:
+          if entry[0] != ">":
+              refstr.append(entry.strip())
+  return "".join(refstr)
 
 
 def chromosome_update_to_mutations(node_list):
+  '''
+  Fixing the chromosome issue in the existing mutations of the tree
+  '''
+
   for current_node in node_list:
     mutations = current_node.mutations #[A2G, T3462G, ...., etc.]
     mutation_with_chromosome_list = ['NC_045512v2:'+mutation for mutation in mutations]
@@ -145,12 +153,27 @@ def main():
   transition_matrix = np.ones((4, 4))
   dfs_traversal_for_error_addition(mat.root, sample_leaf_nodes, sequence, transition_matrix, base_to_idx_mapping, reference_genome)  
   
-  mat.write_vcf(vcf_file = "subtree_random_errors.vcf") #Write into VCF - with original mutations + errors
-  mat.save_pb("subtree_random_errors.pb") #Write into a protobuf - with original mutations + errors
+  mat.write_vcf(vcf_file = "subtree_random_errors_scaled.vcf") #Write into VCF - with original mutations + errors
+  # mat.save_pb("subtree_random_errors.pb") #Write into a protobuf - with original mutations + errors
   return 
 
 
-mat = bte.MATree(pb_file = '/home/shloka/data/phastSim_output_scaled/sars-cov-2_simulation_output.mat.pb') # with phastSim scale parameter = 0.1
+parser = argparse.ArgumentParser(
+                    prog = 'ErrorSimulator',
+                    description = 'Simulate random errors, reversions and amplicon dropout in SARS-CoV2 phylogenetic tree',
+                    epilog = 'Provide each error rate, else it would default to 0'
+                    )
+parser.add_argument('-t', '--tree', type=str, metavar='', required=True, help='phastSim output tree/subtree protobuf file')
+parser.add_argument('-ref', '--reference', type=str, metavar='', required=True, help='root/reference genome sequence')
+parser.add_argument('-r', '--random', type=float, metavar='', nargs='?', const=0, default=0, help='Random error rate, DEFAULT: 0')
+parser.add_argument('-rev', '--reversion', type=float, metavar='', nargs='?', const=0, default=0, help='Reversion rate, DEFAULT: 0')
+parser.add_argument('-ad', '--amplicon_drop', type=float, metavar='', nargs='?', const=0, default=0, help='Amplicon dropout rate, DEFAULT: 0')
+args = parser.parse_args()
 
-error_rate = 0.1 # in percentage (will be taken as input)
+# mat = bte.MATree(pb_file = '/home/shloka/data/phastSim_output_scaled/sars-cov-2_simulation_output.mat.pb') # with phastSim scale parameter = 0.1
+mat = bte.MATree(args.tree)
+# error_rate = 0.1 # in percentage (will be taken as input)
+error_rate = args.random
+reversion_error_rate = args.reversion
+amplicon_dropout_rate = args.amplicon_drop
 main()
