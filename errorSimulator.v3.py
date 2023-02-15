@@ -95,7 +95,7 @@ def dfs_traversal_and_error_addition(current_node, leaf_ids, sample_leaf_nodes, 
             # print("Updated mutation list: ", current_node.mutations)
             transition_matrix = transition_matrix + error_transition_matrix
             # print(f"No. of mutations after error addition: {len(current_node.mutations)}")
-            print()
+            # print()
         
    
   ## If current_node is not a leaf node
@@ -137,6 +137,7 @@ def reversion_addition(leaf_node_list):
             current_leaf_mutations.append(''.join(["NC_045512v2:", current_alt_base, str(error_site_idx), current_ref_base]))
         
         print(f"No. of mutations of leaf after adding reversions: {len(current_leaf_mutations)}")
+        print()
         leaf_node.update_mutations(current_leaf_mutations)
         return
 
