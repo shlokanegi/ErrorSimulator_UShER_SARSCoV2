@@ -1,13 +1,19 @@
 '''
 Get new reference genome (root sequence) for a subtree.
 '''
+## Some code chunks taken from jmcbroome/pango-sequences/extract_strains.py 
+# https://github.com/jmcbroome/pango-sequences/blob/0f72d87e3c07afd21d0d5b00ebb550f8d1c4dc8a/extract_strains.py#L26
+
+# How to run:
+'''
+python3 getNewref.py \
+  -t /home/shloka/data/public-latest.all.masked.pb.gz \
+  -ref /home/shloka/data/NC_045512v2.fa \
+  -c A.1 \
+  -o /home/shloka/data/
+'''
 
 import bte
-
-mat = bte.MATree(pb_file = '/home/shloka/data/public-latest.all.masked.pb.gz')
-clade_tree = mat.get_clade('A.2.2')
-root_node = clade_tree.root
-mutd = clade_tree.get_haplotype(root_node.id)
 
 def parse_reference(refpath):
     refstr = []
@@ -29,9 +35,28 @@ def impute_haplotype(refstr, mutd):
         update[loc] = alt
     return "".join(update)
 
-refgenome = parse_reference('/home/shloka/data/NC_045512v2.fa')
-newref = impute_haplotype(refgenome, mutd)
-of = open('/home/shloka/data/newref.fa',"w+")
-print(">"+'A.2.2',file=of)
-print(newref,file=of)
-of.close()
+
+def main():
+    refgenome = parse_reference(refpath = args.reference)
+    newref = impute_haplotype(refgenome, mutd)
+    of = open(f'{args.outputdir}newref{args.clade}.fa',"w+")
+    print(f'>+{args.clade}',file=of)
+    print(newref,file=of)
+    of.close()
+  
+parser = argparse.ArgumentParser(
+                      prog = 'getNewReference',
+                      description = 'Get root sequence of the clade provided by user'
+                      )
+parser.add_argument('-t', '--tree', type=str, metavar='', required=True, help='SARS-CoV2 global phylogenetic tree; Protobuf file')
+parser.add_argument('-ref', '--reference', type=str, metavar='', required=True, help='SARS-CoV2 reference genome sequence')
+parser.add_argument('-c', '--clade', type=str, metavar='', required=True, help='clade name')
+parser.add_argument('-o', '--outputdir', type=str, metavar='', required=True, help='new reference sequence path')
+args = parser.parse_args()
+
+mat = bte.MATree(args.tree)
+clade_tree = mat.get_clade(args.clade)
+root_node = clade_tree.root
+mutd = clade_tree.get_haplotype(root_node.id)
+
+main()
