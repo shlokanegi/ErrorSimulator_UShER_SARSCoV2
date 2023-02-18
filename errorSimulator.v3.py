@@ -1,4 +1,4 @@
-## Adding reversions
+## Adding reversions too - Binomial draw based on total mutations of tree. Leaves chosen based on weighted probabilities
 import bte
 import numpy as np
 from scipy.stats import poisson
@@ -95,7 +95,7 @@ def dfs_traversal_and_error_addition(current_node, leaf_ids, sample_leaf_nodes, 
             # print("Updated mutation list: ", current_node.mutations)
             transition_matrix = transition_matrix + error_transition_matrix
             # print(f"No. of mutations after error addition: {len(current_node.mutations)}")
-            # print()
+            print()
         
    
   ## If current_node is not a leaf node
@@ -117,29 +117,35 @@ def dfs_traversal_and_error_addition(current_node, leaf_ids, sample_leaf_nodes, 
     return
 
 
-def reversion_addition(leaf_node_list):
+def reversion_addition(leaf_node_list, reversion_count, leaf_mutation_count_dict):
     '''
     Adds reversions to all leaf nodes, with number of reversions per leaf node chosen through 
     a binomial draw (at each leaf)
     '''
+    leaf_mutation_probability_distribution = np.array([leaf_mutation_count_dict[leaf_node.id] for leaf_node in leaf_node_list])
+    leaf_mutation_probability_distribution = leaf_mutation_probability_distribution / leaf_mutation_probability_distribution.sum()
+    leaf_reversion_sample_list = list(np.random.choice(leaf_node_list, p=leaf_mutation_probability_distribution, size=reversion_count))
+    sample_leaf_node_id_dict = {x.id:leaf_reversion_sample_list.count(x) for x in leaf_reversion_sample_list}
+
     for leaf_node in leaf_node_list:
-        mutations_root_to_leaf = list(mat.get_haplotype(leaf_node.id))
-        num_reversions_current_leaf = binom.rvs(n=len(mutations_root_to_leaf), p=reversion_error_rate)  # check this, should it be (reversion_error_rate / 100) ?
-        reversion_indices_list = list(np.random.randint(len(mutations_root_to_leaf), size=num_reversions_current_leaf))
-        print(f"No. of reversions to be added: {len(reversion_indices_list)}")
-        current_leaf_mutations = leaf_node.mutations
-        print(f"No. of mutations of leaf before adding reversions: {len(current_leaf_mutations)}")
-        for idx in reversion_indices_list:
-            mutation = mutations_root_to_leaf[idx]
-            current_ref_base = mutation[0]
-            error_site_idx = int(mutation[1:-1])
-            current_alt_base = mutation[-1]
-            current_leaf_mutations.append(''.join(["NC_045512v2:", current_alt_base, str(error_site_idx), current_ref_base]))
-        
-        print(f"No. of mutations of leaf after adding reversions: {len(current_leaf_mutations)}")
-        print()
-        leaf_node.update_mutations(current_leaf_mutations)
-        return
+        if leaf_node.id in sample_leaf_node_id_dict:
+            mutations_root_to_leaf = list(mat.get_haplotype(leaf_node.id))
+            num_reversions_current_leaf = sample_leaf_node_id_dict[leaf_node.id]
+            reversion_indices_list = list(np.random.randint(len(mutations_root_to_leaf), size=num_reversions_current_leaf))
+            print(f"No. of reversions to be added on this leaf: {len(reversion_indices_list)}")
+            current_leaf_mutations = leaf_node.mutations
+            print(f"No. of mutations of leaf before adding reversions: {len(current_leaf_mutations)}")
+            for idx in reversion_indices_list:
+                mutation = mutations_root_to_leaf[idx]
+                current_ref_base = mutation[0]
+                error_site_idx = int(mutation[1:-1])
+                current_alt_base = mutation[-1]
+                current_leaf_mutations.append(''.join(["NC_045512v2:", current_alt_base, str(error_site_idx), current_ref_base]))
+            
+            print(f"No. of mutations of leaf after adding reversions: {len(current_leaf_mutations)}")
+            print()
+            leaf_node.update_mutations(current_leaf_mutations)
+    return
 
 
 def main():
@@ -150,17 +156,22 @@ def main():
     chromosome_update_to_mutations(node_list)
 
     tree_mutation_count = sum([len(node.mutations) for node in node_list])
-    expected_error_count = (error_rate * tree_mutation_count)/100
-    error_count = poisson.rvs(expected_error_count)
+
 
     # print(f"Total number of errors being incorporated: {error_count}\n")
     leaf_node_list = mat.get_leaves()
 
-    reversion_addition(leaf_node_list)
     leaf_mutation_count_dict = {}
 
     for leaf_node in leaf_node_list:
         leaf_mutation_count_dict[leaf_node.id] = len(mat.get_haplotype(leaf_node.id))
+    
+    reversion_count = binom.rvs(n=tree_mutation_count, p=reversion_error_rate)
+    expected_error_count = (error_rate * tree_mutation_count)/100
+    error_count = poisson.rvs(expected_error_count)
+    print(f"Total number of reversions to be added on the tree: {reversion_count}")
+
+    reversion_addition(leaf_node_list, reversion_count, leaf_mutation_count_dict)
 
     # Sampling the nodes using the probability distribution, and have created `sample_leaf_nodes`
     leaf_ids = np.array(list(leaf_mutation_count_dict.keys()))
