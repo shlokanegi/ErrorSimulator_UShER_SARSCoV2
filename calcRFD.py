@@ -17,15 +17,10 @@ with open(args.tree1, 'rb') as nwk1:
 with open(args.tree1, 'rb') as nwk2:
     tree2 = nwk2.read()
 
-t1 = Tree(args.tree1) # true tree
-t2 = Tree(args.tree2) # simulated tree
-rf = t1.robinson_foulds(t2)[0]
-max_rf = t1.robinson_foulds(t2)[1]
-common_leaves = t1.robinson_foulds(t2)[2]
-parts_t1 = t1.robinson_foulds(t2)[3]
-parts_t2 = t1.robinson_foulds(t2)[4] 
-print(t1, t2)
+t1 = Tree(args.tree1, format=1) # true tree
+t2 = Tree(args.tree2, format=1) # simulated tree
+rf, max_rf, common_leaves, parts_t1, parts_t2, discard_t1, discart_t2 = t1.robinson_foulds(t2, unrooted_trees=True)
+# print(t1, t2)
 print("RF distance is %s over a total of %s" %(rf, max_rf))
 print("Partitions in tree2 that were not found in tree1:", parts_t1 - parts_t2)
 print("Partitions in tree1 that were not found in tree2:", parts_t2 - parts_t1)
-
