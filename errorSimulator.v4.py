@@ -276,6 +276,7 @@ def main():
         leaf_ids = np.array(list(leaf_mutation_count_dict.keys()))
         sample_leaf_ids = list(np.random.choice(leaf_ids, size=error_count))
         sample_leaf_nodes = {x:sample_leaf_ids.count(x) for x in sample_leaf_ids}
+        print(f"Total number of random errors to be incorporated on the tree: {error_count}")
         print(f"No. of leaves with random error addition: {len(sample_leaf_nodes)}\n")
         
         sequence = []
