@@ -249,9 +249,9 @@ def main():
     error_count = poisson.rvs(expected_error_count)
     expected_dropout_count = (amplicon_dropout_rate * n_amplicon)
     amplicon_dropout_count = poisson.rvs(expected_dropout_count)
-    print(f"Total number of reversions to be added on the tree: {reversion_count}")
-
+    
     if reversion_count != 0:
+        print(f"Total number of reversions to be added on the tree: {reversion_count}")
         reversion_addition(leaf_node_list, reversion_count, leaf_mutation_count_dict)
 
     # Sampling the nodes using the probability distribution, and have created `sample_leaf_nodes`
@@ -261,22 +261,24 @@ def main():
     print(f"Total leaves on tree: {len(leaf_node_list)}")
     print(f"No. of leaves with error addition: {len(sample_leaf_nodes)}\n")
 
-    sequence = []
-    base_to_idx_mapping = {'A': 0, 'T': 1, 'C': 2, 'G': 3 }
-    transition_matrix = np.ones((4, 4))
     if error_count != 0:
+        sequence = []
+        base_to_idx_mapping = {'A': 0, 'T': 1, 'C': 2, 'G': 3 }
+        transition_matrix = np.ones((4, 4))
         dfs_traversal_and_error_addition(mat.root, leaf_ids, sample_leaf_nodes, sequence, transition_matrix, base_to_idx_mapping, reference_genome)  
 
     ############ DEFINE amplicon_ranges_list FIRST ###########
     try:
         if amplicon_ranges_list == None:
-            raise ValueError("DEFINE amplicon_ranges_list FIRST !!!")
+            raise ValueError("")
     except ValueError:
-        print("alley momchi file se extract karo na list")
+        print("Define amplicon_ranges_list FIRST !!!")
 
-    amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, leaf_node_list, reference_genome)
+    if amplicon_dropout_rate!=0:
+        amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, leaf_node_list, reference_genome)
 
-    mat.write_vcf(vcf_file = "subtree_errors_revs_ampdropouts.vcf") #Write into VCF - with original mutations + errors + reversions
+    #Write into VCF - with original mutations + errors + reversions + amplicon dropouts
+    mat.write_vcf(vcf_file = "subtree_errors_revs_ampdropouts.vcf") 
     return 
 
 
@@ -297,3 +299,4 @@ error_rate = args.random
 reversion_error_rate = args.reversion
 amplicon_dropout_rate = args.amplicon_drop
 main()
+
