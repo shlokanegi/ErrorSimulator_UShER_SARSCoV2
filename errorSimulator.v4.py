@@ -11,7 +11,7 @@ def parse_reference(refpath):
         for entry in inf:
             if entry[0] != ">":
                 refstr.append(entry.strip())
-    return "".join(refstr)
+    return [*refstr[0]]
 
 
 def chromosome_update_to_mutations(node_list):
@@ -23,6 +23,18 @@ def chromosome_update_to_mutations(node_list):
         mutations = current_node.mutations #[A2G, T3462G, ...., etc.]
         mutation_with_chromosome_list = ['NC_045512v2:'+mutation for mutation in mutations]
         current_node.update_mutations(mutation_with_chromosome_list)
+    return
+
+
+def reconstruct_sequence_slice(leaf_node, reference_genome, amplicon_range, mutation_list):
+    sequence_slice = reference_genome[amplicon_range[0]: amplicon_range[1]]
+    # print("reference_genome: ", reference_genome)    
+    for mutation in mutation_list:
+        index = int(mutation[1:-1])
+        alt_base = mutation[-1]
+        if (index >= amplicon_range[0]) and (index < amplicon_range[1]):
+            sequence_slice[index-amplicon_range[0]] = alt_base
+    return sequence_slice
 
 
 def dfs_traversal_and_error_addition(current_node, leaf_ids, sample_leaf_nodes, previous_node_DNA_sequence, transition_matrix, base_to_idx_mapping, reference_genome):
@@ -52,7 +64,7 @@ def dfs_traversal_and_error_addition(current_node, leaf_ids, sample_leaf_nodes, 
 
     if(current_node.id == mat.root.id):
         ## current node is the root, so store the reference DNA sequence in `current_node_DNA_sequence`
-        current_node_DNA_sequence = list(reference_genome)
+        current_node_DNA_sequence = reference_genome
     else:
         ## update `current_node_DNA_sequence` and `transition_matrix` here
         current_node_DNA_sequence = previous_node_DNA_sequence
@@ -148,10 +160,12 @@ def reversion_addition(leaf_node_list, reversion_count, leaf_mutation_count_dict
     return
 
 
-def amplicon_dropout(amplicon_ranges_list, amplicon_dropout_count, leaf_node_list): 
+def amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, leaf_node_list, reference_genome):
+
     sampled_source_leaf_list = list(np.random.choice(leaf_node_list, size=amplicon_dropout_count))
     sampled_source_leaf_dict = {x:sampled_source_leaf_list.count(x) for x in sampled_source_leaf_list}
-    sampled_amplicons_dict_list = {x:list(np.random.choice(amplicon_ranges_list, size=sampled_source_leaf_dict[x], replace=False)) for x in sampled_source_leaf_list}
+    sampled_amplicons_dict_list = {x:list(np.random.choice([i for i in range(n_amplicon)], size=sampled_source_leaf_dict[x], replace=False)) for x in sampled_source_leaf_dict}
+    sampled_amplicons_dict_list = {key:[amplicon_ranges_list[x] for x in val] for key,val in sampled_amplicons_dict_list.items()}
     sampled_replacement_leaf_dict_list = {}
     for source_leaf, cnt in sampled_source_leaf_dict.items():
         rep_leaf_list = []
@@ -171,12 +185,38 @@ def amplicon_dropout(amplicon_ranges_list, amplicon_dropout_count, leaf_node_lis
     for source_leaf in sampled_source_leaf_dict:
         for i in range(sampled_source_leaf_dict[source_leaf]):
             replacement_leaf = sampled_replacement_leaf_dict_list[source_leaf][i]
-            amplicon_range = sampled_amplicons_dict_list[i]
+            amplicon_range = sampled_amplicons_dict_list[source_leaf][i]
+            source_mutation_list = list(mat.get_haplotype(source_leaf.id))
+            replacement_mutation_list = list(mat.get_haplotype(replacement_leaf.id))
+            source_sequence_slice = reconstruct_sequence_slice(source_leaf, reference_genome, amplicon_range, source_mutation_list)
+            replacement_sequence_slice = reconstruct_sequence_slice(replacement_leaf, reference_genome, amplicon_range, replacement_mutation_list)
+            refgenome_sequence_slice = reference_genome[amplicon_range[0]: amplicon_range[1]]
+            source_reversion_list = []
+            for idx in range(amplicon_range[1]-amplicon_range[0]):
+                if (source_sequence_slice[idx] != refgenome_sequence_slice[idx]) and (source_sequence_slice[idx] != replacement_sequence_slice[idx]):  # revert here!!
+                    # first performing reversion in source_leaf
+                    source_reversion_list.append(source_sequence_slice[idx] + str(idx+amplicon_range[0]) + refgenome_sequence_slice[idx])
+                    
+            source_addition_list = []
+            replacement_reversion_list = []
+            for idx in range(amplicon_range[1]-amplicon_range[0]):
+                if replacement_sequence_slice[idx] != refgenome_sequence_slice[idx] and (source_sequence_slice[idx] != replacement_sequence_slice[idx]):  # add here!!
+                    # performing addition in source_leaf (from replacement_leaf)
+                    source_addition_list.append(refgenome_sequence_slice[idx] + str(idx+amplicon_range[0]) + replacement_sequence_slice[idx])
+                if replacement_sequence_slice[idx] != refgenome_sequence_slice[idx]:
+                    # performing reversion in replacement_leaf
+                    replacement_reversion_list.append(replacement_sequence_slice[idx] + str(idx+amplicon_range[0]) + refgenome_sequence_slice[idx])
+                
+            # now add the mutations to the source and replacement leaf's mutation lists
+            source_mutation_list.extend(source_reversion_list)
+            source_mutation_list.extend(source_addition_list)
+            replacement_mutation_list.extend(replacement_reversion_list)
+            
+            # updating the mutations back into nodes
+            source_leaf.update_mutations(source_mutation_list)
+            replacement_leaf.update_mutations(replacement_mutation_list)
 
-    
-    pass
-
-
+    return
 
 
 
@@ -211,7 +251,8 @@ def main():
     amplicon_dropout_count = poisson.rvs(expected_dropout_count)
     print(f"Total number of reversions to be added on the tree: {reversion_count}")
 
-    reversion_addition(leaf_node_list, reversion_count, leaf_mutation_count_dict)
+    if reversion_count != 0:
+        reversion_addition(leaf_node_list, reversion_count, leaf_mutation_count_dict)
 
     # Sampling the nodes using the probability distribution, and have created `sample_leaf_nodes`
     leaf_ids = np.array(list(leaf_mutation_count_dict.keys()))
@@ -223,7 +264,8 @@ def main():
     sequence = []
     base_to_idx_mapping = {'A': 0, 'T': 1, 'C': 2, 'G': 3 }
     transition_matrix = np.ones((4, 4))
-    dfs_traversal_and_error_addition(mat.root, leaf_ids, sample_leaf_nodes, sequence, transition_matrix, base_to_idx_mapping, reference_genome)  
+    if error_count != 0:
+        dfs_traversal_and_error_addition(mat.root, leaf_ids, sample_leaf_nodes, sequence, transition_matrix, base_to_idx_mapping, reference_genome)  
 
     ############ DEFINE amplicon_ranges_list FIRST ###########
     try:
@@ -232,9 +274,9 @@ def main():
     except ValueError:
         print("alley momchi file se extract karo na list")
 
-    amplicon_dropout(amplicon_ranges_list, amplicon_dropout_count, leaf_node_list)
+    amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, leaf_node_list, reference_genome)
 
-    mat.write_vcf(vcf_file = "subtree_errors_reversions.vcf") #Write into VCF - with original mutations + errors + reversions
+    mat.write_vcf(vcf_file = "subtree_errors_revs_ampdropouts.vcf") #Write into VCF - with original mutations + errors + reversions
     return 
 
 
@@ -255,4 +297,3 @@ error_rate = args.random
 reversion_error_rate = args.reversion
 amplicon_dropout_rate = args.amplicon_drop
 main()
-
