@@ -298,7 +298,7 @@ def main():
 
     #Write into VCF - with original mutations + errors + reversions + amplicon dropouts
     mat.write_vcf(vcf_file = "subtree_errors_reversions.vcf") 
-    return 
+    return
 
 
 parser = argparse.ArgumentParser(
