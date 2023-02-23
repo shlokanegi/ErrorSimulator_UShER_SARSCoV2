@@ -1,4 +1,4 @@
-## Amplicon dropouts based on rate and number of amplicons
+## Adding - Amplicon dropouts based on rate and number of amplicons
 import bte
 import numpy as np
 from scipy.stats import poisson
@@ -130,8 +130,7 @@ def dfs_traversal_and_error_addition(current_node, leaf_ids, sample_leaf_nodes, 
 
 def reversion_addition(leaf_node_list, reversion_count, leaf_mutation_count_dict):
     '''
-    Adds reversions to all leaf nodes, with number of reversions per leaf node chosen through 
-    a binomial draw (at each leaf)
+    Adds reversions to all leaf nodes, with number of reversions per leaf node chosen through a binomial draw (at each leaf)
     '''
 
     leaf_mutation_probability_distribution = np.array([leaf_mutation_count_dict[leaf_node.id] for leaf_node in leaf_node_list])
@@ -162,8 +161,8 @@ def reversion_addition(leaf_node_list, reversion_count, leaf_mutation_count_dict
 
 def amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, leaf_node_list, reference_genome):
     '''
-    Using a real primer schene (ARTIC4.1) and an amplicon_dropout_rate, this function "drops out" an amplicon and replaces 
-    it with variation from elsewhere on the tree 
+    Using a real primer schene (ARTIC4.1) and an amplicon_dropout_rate (provided by the user), this function "drops out" an amplicon and 
+    replaces it with variation from elsewhere on the tree 
 
     Source leaf      : Leaf where the amplicon is dropped out and replaced by the amplicon sequence from replacement leaf corresponding to same amplicon range 
     Replacement leaf : Leaf chosen for replacing the dropped out amplicon on source leaf with variation of itself.
@@ -263,7 +262,8 @@ def main():
     error_count = poisson.rvs(expected_error_count)
     expected_dropout_count = (amplicon_dropout_rate * n_amplicon)
     amplicon_dropout_count = poisson.rvs(expected_dropout_count)
-    
+
+        
     ########### REVERSIONS #############
     if reversion_count != 0:
         print(f"Total number of reversions to be added on the tree: {reversion_count}")
@@ -276,6 +276,14 @@ def main():
         leaf_ids = np.array(list(leaf_mutation_count_dict.keys()))
         sample_leaf_ids = list(np.random.choice(leaf_ids, size=error_count))
         sample_leaf_nodes = {x:sample_leaf_ids.count(x) for x in sample_leaf_ids}
+        
+        ## Create a metadata file for coloring leaves with random errors
+        samples_with_errors_dict = {leaf : ("Yes" if leaf in sample_leaf_nodes else "No") for leaf in leaf_mutation_count_dict}
+        with open("metadata_random_errors.tsv", "w") as m:
+            m.write("strain" + "\t" + "errors" + "\n")
+            for leaf in samples_with_errors_dict:
+                m.write(leaf + "\t" + samples_with_errors_dict[leaf] + "\n")
+
         print(f"Total number of random errors to be incorporated on the tree: {error_count}")
         print(f"No. of leaves with random error addition: {len(sample_leaf_nodes)}\n")
         
