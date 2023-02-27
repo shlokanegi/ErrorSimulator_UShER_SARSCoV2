@@ -1,3 +1,4 @@
+## Adding - Amplicon dropouts based on rate and number of amplicons
 import bte
 import numpy as np
 from scipy.stats import poisson
@@ -171,6 +172,7 @@ def amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, l
 
     sampled_source_leaf_list = list(np.random.choice(leaf_node_list, size=amplicon_dropout_count))
     sampled_source_leaf_dict = {x:sampled_source_leaf_list.count(x) for x in sampled_source_leaf_list}
+    # sampled_source_leaf_id_dict = {x.id : sampled_source_leaf_dict[x] for x in sampled_source_leaf_dict}
     sampled_amplicons_dict_list = {x:list(np.random.choice([i for i in range(n_amplicon)], size=sampled_source_leaf_dict[x], replace=False)) for x in sampled_source_leaf_dict}
     sampled_amplicons_dict_list = {key:[amplicon_ranges_list[x] for x in val] for key,val in sampled_amplicons_dict_list.items()}
     sampled_replacement_leaf_dict_list = {}
@@ -189,16 +191,15 @@ def amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, l
     # sampled_amplicons_dict_list = {A: [(50, 100), (80, 120), (170, 190)], B: [(70, 200), (140, 160)], C: [(210, 235)]}
     # sampled_replacement_leaf_dict_list = {A: [C, B, C], B: [C, A], C: [A]}
 
-    samples_with_amplicon_drops_dict = {leaf : ("Yes" if leaf in sampled_source_leaf_dict else "No") for leaf in leaf_mutation_count_dict}
-    
+    # samples_with_amplicon_drops_dict = {leaf : ("Yes" if leaf in sampled_source_leaf_id_dict else "No") for leaf in leaf_mutation_count_dict}
+    samples_with_amplicon_drops_dict = {leaf : "No" for leaf in leaf_mutation_count_dict}
+
     for source_leaf in sampled_source_leaf_dict:
         for i in range(sampled_source_leaf_dict[source_leaf]):
             replacement_leaf = sampled_replacement_leaf_dict_list[source_leaf][i]
             amplicon_range = sampled_amplicons_dict_list[source_leaf][i]
             source_mutation_list = list(mat.get_haplotype(source_leaf.id))
-            print(f"SOURCE mutations = {source_mutation_list}")
             replacement_mutation_list = list(mat.get_haplotype(replacement_leaf.id))
-            print(f"REPLACEMENT mutations = {replacement_mutation_list}")
             source_sequence_slice = reconstruct_sequence_slice(source_leaf, reference_genome, amplicon_range, source_mutation_list)
             replacement_sequence_slice = reconstruct_sequence_slice(replacement_leaf, reference_genome, amplicon_range, replacement_mutation_list)
             refgenome_sequence_slice = reference_genome[amplicon_range[0]: amplicon_range[1]]
@@ -208,26 +209,31 @@ def amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, l
                 if (source_sequence_slice[idx] == replacement_sequence_slice[idx]) and source_sequence_slice[idx] != refgenome_sequence_slice[idx] :
                     print("same mutation present in both source and replacement")
                 if (source_sequence_slice[idx] != refgenome_sequence_slice[idx]) and (source_sequence_slice[idx] != replacement_sequence_slice[idx]):  # revert here!!
-                    # first performing reversion in source_leaf
+                    # first performing reversion in source_leaf (deleting mutations)
                     source_reversion_list.append(source_sequence_slice[idx] + str(idx+amplicon_range[0]) + refgenome_sequence_slice[idx])
-            print(f"Number of mutations dropped from source leaf lying in amplicon range {amplicon_range} is {len(source_reversion_list)}")
 
             source_addition_list = []
             for idx in range(amplicon_range[1]-amplicon_range[0]):
                 if replacement_sequence_slice[idx] != refgenome_sequence_slice[idx] and (source_sequence_slice[idx] != replacement_sequence_slice[idx]):  # add here!!
-                    # performing addition in source_leaf (from replacement_leaf)
+                    # second performing addition in source_leaf (from replacement_leaf)
                     source_addition_list.append(refgenome_sequence_slice[idx] + str(idx+amplicon_range[0]) + replacement_sequence_slice[idx])
-            print(f"Number of mutations added to the source leaf from replacement leaf lying in amplicon range {amplicon_range} is {len(source_addition_list)}")
-            print()
-
-            # now add the mutations to the source and replacement leaf's mutation lists
-            source_mutation_list.extend(source_reversion_list)
-            source_mutation_list.extend(source_addition_list)
             
-            # updating the mutations back into nodes
-            source_leaf.update_mutations(source_mutation_list)
-            print(f"Final number of mutations on source leaf: {len(source_leaf.mutations)}")
-            print()
+            if len(source_reversion_list) != 0 or len(source_addition_list) != 0:
+                samples_with_amplicon_drops_dict[source_leaf.id] = "Yes"
+                print(f"SOURCE mutations = {source_mutation_list}")
+                print(f"REPLACEMENT mutations = {replacement_mutation_list}")
+                print(f"Number of mutations dropped from source leaf lying in amplicon range {amplicon_range} is {len(source_reversion_list)}")
+                print(f"Number of mutations added to the source leaf from replacement leaf lying in amplicon range {amplicon_range} is {len(source_addition_list)}")
+                print()
+
+                # now add the mutations to the source and replacement leaf's mutation lists
+                source_mutation_list.extend(source_reversion_list)
+                source_mutation_list.extend(source_addition_list)
+                
+                # updating the mutations back into nodes
+                source_leaf.update_mutations(source_mutation_list)
+                print(f"Final number of mutations on source leaf: {len(source_leaf.mutations)}")
+                print()
 
     return samples_with_amplicon_drops_dict
 
@@ -298,7 +304,7 @@ def main():
         print("Define amplicon_ranges_list FIRST !!!")
 
     ## Run amplicon-dropout method
-    if amplicon_dropout_rate!=0:
+    if amplicon_dropout_rate != 0:
         print(f"{amplicon_dropout_count} amplicon dropouts will be made out of {n_amplicon} possible inserts.\n")
         samples_with_amplicon_drops_dict = amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, leaf_node_list, reference_genome, leaf_mutation_count_dict)
 
@@ -306,8 +312,8 @@ def main():
     mat.write_vcf(vcf_file = "subtree_errors.vcf") 
 
     # Write a metadata file for taxonium
-    with open("/home/shloka/data/taxonium/metadata_random_errors.tsv", "w") as m:
-        m.write("strain" + "\t" + "random errors" + "\t" + "reversions" + "\t" + "amplicon dropouts" + "\n")
+    with open("/home/shloka/data/taxonium/metadata_errors.tsv", "w") as m:
+        m.write("strain" + "\t" + "random_errors" + "\t" + "reversions" + "\t" + "amplicon_dropouts" + "\n")
         for leaf in samples_with_random_errors_dict:
             m.write(leaf + "\t" + samples_with_random_errors_dict[leaf] + "\t" + samples_with_reversions_dict[leaf] + "\t" + samples_with_amplicon_drops_dict[leaf] + "\n")
 
