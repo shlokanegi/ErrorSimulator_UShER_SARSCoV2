@@ -172,7 +172,6 @@ def amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, l
 
     sampled_source_leaf_list = list(np.random.choice(leaf_node_list, size=amplicon_dropout_count))
     sampled_source_leaf_dict = {x:sampled_source_leaf_list.count(x) for x in sampled_source_leaf_list}
-    # sampled_source_leaf_id_dict = {x.id : sampled_source_leaf_dict[x] for x in sampled_source_leaf_dict}
     sampled_amplicons_dict_list = {x:list(np.random.choice([i for i in range(n_amplicon)], size=sampled_source_leaf_dict[x], replace=False)) for x in sampled_source_leaf_dict}
     sampled_amplicons_dict_list = {key:[amplicon_ranges_list[x] for x in val] for key,val in sampled_amplicons_dict_list.items()}
     sampled_replacement_leaf_dict_list = {}
@@ -191,7 +190,6 @@ def amplicon_dropout(amplicon_ranges_list, n_amplicon, amplicon_dropout_count, l
     # sampled_amplicons_dict_list = {A: [(50, 100), (80, 120), (170, 190)], B: [(70, 200), (140, 160)], C: [(210, 235)]}
     # sampled_replacement_leaf_dict_list = {A: [C, B, C], B: [C, A], C: [A]}
 
-    # samples_with_amplicon_drops_dict = {leaf : ("Yes" if leaf in sampled_source_leaf_id_dict else "No") for leaf in leaf_mutation_count_dict}
     samples_with_amplicon_drops_dict = {leaf : "No" for leaf in leaf_mutation_count_dict}
 
     for source_leaf in sampled_source_leaf_dict:
@@ -267,7 +265,7 @@ def main():
     amplicon_dropout_count = poisson.rvs(expected_dropout_count)
 
     ## Initializing dictionaries for writing metadata file 
-    samples_with_random_errors_dict = samples_with_reversions_dict = samples_with_amplicon_drops_dict = {}
+    samples_with_random_errors_dict = samples_with_reversions_dict = samples_with_amplicon_drops_dict = {leaf : "No" for leaf in leaf_mutation_count_dict}
 
 
     ########### REVERSIONS #############
