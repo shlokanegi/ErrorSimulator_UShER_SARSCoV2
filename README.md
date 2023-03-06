@@ -2,11 +2,12 @@
 A simulation platform that incorporates realistic errors into simulated SARS-CoV-2 genomes. 
 
 ## Table of Contents
-* [Background and Motivation]()
-* [Types of Errors simulated by error simulator]()
-* [Methodology]()
-* [Result]()
-* [Usage]()
+* [Background and Motivation](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#background-and-motivation)
+* [Types of Errors simulated by error simulator](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#types-of-errors-simulated-by-error-simulator)
+* [Methodology](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#methodology
+)
+* [Result](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#result---usher-is-most-sensitive-to-reversions)
+* [Usage](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#usage)
 
 ## Background and Motivation
 Many a times some mutations in the phylogenetic tree, seem more likely the result of contamination, sequencing errors, or any other kinds of random errors, than merely selection or recombination.
