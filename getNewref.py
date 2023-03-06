@@ -1,16 +1,12 @@
 '''
-Get new reference genome (root sequence) for a subtree.
-'''
-## Some code chunks taken from jmcbroome/pango-sequences/extract_strains.py 
-# https://github.com/jmcbroome/pango-sequences/blob/0f72d87e3c07afd21d0d5b00ebb550f8d1c4dc8a/extract_strains.py#L26
-
-# How to run:
-'''
-python3 getNewref.py \
-  -t /home/shloka/data/public-latest.all.masked.pb.gz \
-  -ref /home/shloka/data/NC_045512v2.fa \
-  -c A.1 \
-  -o /home/shloka/data/
+Author  : Shloka Negi, shnegi@ucsc.edu; some code chunks taken from jmcbroome/pango-sequences/extract_strains.py 
+Purpose : Get new reference genome (root sequence) for a subtree.
+Inputs  : output VCFs from hap.py comparison
+Usage   : python3 getNewref.py \
+            -t public-latest.all.masked.pb.gz \
+            -ref NC_045512v2.fa \
+            -c B.1.1 \
+            -o /home/shloka/data/
 '''
 
 import bte
