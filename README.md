@@ -52,6 +52,15 @@ Therefore, this idea of developing an ErrorSimulator platform came into picture,
 * Using a better metric that Robinson Fould to compare trees
 
 ## USAGE
+Get new reference genome (root sequence) for a subtree, with a given clade.
+```
+python3 getNewref.py \
+     -t public-latest.all.masked.pb.gz \
+     -ref NC_045512v2.fa \
+     -c B.1.1 \
+     -o ~/ourdir/
+```
+
 Adding errors on a MAT (Mutation Annotated Tree) using error simulator
 ```
 conda install -c conda-forge -c bioconda bte
@@ -72,3 +81,4 @@ python3 calcRFD.py \
     -t1 realtree.nwk \
     -t2 inferredtree.nwk
 ```
+
