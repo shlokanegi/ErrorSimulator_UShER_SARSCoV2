@@ -1,3 +1,9 @@
+'''
+Author: Shloka Negi, shnegi@ucsc.edu
+Usage: Execute line by line, or blocks of code as required
+Purpose: Random blocks of commands helpful throughout the project
+'''
+
 ## Install conda
 # Miniconda Installer scripts - Linux : https://docs.conda.io/en/latest/miniconda.html#linux-installers
 wget https://repo.anaconda.com/miniconda/Miniconda3-py310_22.11.1-1-Linux-x86_64.sh
@@ -89,7 +95,7 @@ cd data/BTE
 python3 argparse_errorSimulator.v6.py \
     -t ~/data/phastSimA.1_output_scaled/sars-cov-2_simulation_output.mat.pb \
     -ref ~/data/newrefA.1.fa \
-    -r 0 -rev 0 -ad 0
+    -r 0.2 -rev 0 -ad 0
 
 python3 argparse_errorSimulator.v6.py \
     -t ~/data/phastSimB.1.1.1_output_scaled/sars-cov-2_simulation_output_collapsed.mat.pb \
