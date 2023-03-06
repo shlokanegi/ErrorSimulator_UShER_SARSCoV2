@@ -7,6 +7,7 @@ A simulation platform that incorporates realistic errors into simulated SARS-CoV
 * [Methodology](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#methodology
 )
 * [Result](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#result---usher-is-most-sensitive-to-reversions)
+* [Conclusion and Future Work](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#conclusion-and-future-work)
 * [Usage](https://github.com/shlokanegi/ErrorSimulator_UShER_SARSCoV2/blob/master/README.md#usage)
 
 ## Background and Motivation
@@ -43,6 +44,12 @@ Therefore, this idea of developing an ErrorSimulator platform came into picture,
 2. **Random Errors** - Might look like a slight increasing trend, but the RFD is pretty much oscillates around this average of 0.15. It stayed the same till even 200% of error was incorporated, but then it did start to increase to 0.5 and 0.6 at much higher error percentages of 500% and 1000%.  An explanation for this might be that - For random error incorporation, we are adding more “false” mutations to leaves, which would essentially just increase the branch length. That’s probably why there isn’t a lot of rearrangement in the tree when USHER recreates it. Hence, the constant 0.15 value.
 
 3. **Reversions** - This shows as clear increase in RFD. This kinda makes sense as here, we are actually removing mutations from the mutation list, which intuitively seems more than just reducing branch lengths. Hence, more rearrangement in the tree.![image]
+
+## Conclusion and Future Work
+* Optimization of UShER to reduce sensitivity towards errors.
+* Developing an error-correction/ tree-pruning algorithm, mostly tailored to handle reversions better.
+* Improving simulation of amplicon dropout errors by sampling amplicons based on a probabilistic model, exploiting the knowledge of some amplicons being more likely to dropout than others.
+* Using a better metric that Robinson Fould to compare trees
 
 ## USAGE
 Adding errors on a MAT (Mutation Annotated Tree) using error simulator
