@@ -32,17 +32,6 @@ matUtils extract -i public-latest.all.masked.pb.gz -c B.1.1.1 -t subtree_B.1.1.1
 
 ## Use PhastSim
 mkdir phastSim_output
-# phastSim --outpath phastSim_output/ --seed 7 --treeFile subtree.nwk --reference newref.fa\
-#     --createNewick --createMAT --createFasta --createInfo --createPhylip \
-#     --scale 0.333333333 --invariable 0.1 --alpha 1.0 --omegaAlpha 1.0 \
-#     --hyperMutProbs 0.01 0.01 --hyperMutRates 20.0 200.0 --codon \
-#     --eteFormat 1
-
-# phastSim --outpath phastSim_output_scaled/ --seed 7 --treeFile subtree.nwk --reference newref.fa\
-#     --createNewick --createMAT --createFasta --createInfo --createPhylip \
-#     --scale 0.1 --alpha 1.0 --omegaAlpha 1.0 --codon \
-#     --eteFormat 1
-
 
 phastSim --outpath phastSimA.1_output_scaled/ --seed 7 --treeFile subtree.nwk --reference newref.fa\
     --createNewick --createMAT --createFasta --createInfo --createPhylip \
@@ -50,7 +39,6 @@ phastSim --outpath phastSimA.1_output_scaled/ --seed 7 --treeFile subtree.nwk --
     --eteFormat 1
 conda activate usher-env; cd phastSimA.1_output_scaled; matUtils extract -i sars-cov-2_simulation_output.mat.pb -o sars-cov-2_simulation_output_collapsed.mat.pb -O
 matUtils extract -i sars-cov-2_simulation_output_collapsed.mat.pb -t sars-cov-2_simulation_output_collapsed.nwk
-
 
 phastSim --outpath phastSimB.1.1.1_output_scaled/ --seed 7 --treeFile subtree_B.1.1.1.nwk --reference newrefB.1.1.1.fa\
     --createNewick --createMAT --createFasta --createInfo --createPhylip \
