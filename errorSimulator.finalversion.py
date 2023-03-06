@@ -1,4 +1,17 @@
-## Adding - Amplicon dropouts based on rate and number of amplicons
+'''
+Author  : Shloka Negi, shnegi@ucsc.edu
+Purpose : Error Simulator which allows the addition of random errors, reversions or amplicon dropouts with contamination on simulated real trees
+Inputs  : MAT.pb (Mutation Annotated Tree Object)
+        : Reference genome (or root sequence, if using a subtree)
+        : random error rate - error count calculated through a poisson draw, with mu = total mutations on tree * random error rate
+        : reversion error rate - error count calculated through a binomial draw, with p = reversion error rate and n = total mutations on tree
+        : amplicon dropout rate - no. of amplicon dropouts calculated through a poisson draw, with mu = no. of amplicon primers in ARTIC4.1 * amplicon dropout rate
+Outputs : VCF file with real mutations + errors
+        : metadata.TSV file for visualizing erroneous trees on Taxonium (CoV2Tree.org)
+Usage   : python3 errorSimulator.py -t tree.mat.pb -ref reference.fa -r 0.5 -rev 0.04 -ad 0.8
+
+'''
+
 import bte
 import numpy as np
 from scipy.stats import poisson
@@ -27,6 +40,9 @@ def chromosome_update_to_mutations(node_list):
 
 
 def reconstruct_sequence_slice(leaf_node, reference_genome, amplicon_range, mutation_list):
+    '''
+    helper method for amplicon_dropout()
+    '''
     sequence_slice = reference_genome[amplicon_range[0]: amplicon_range[1]]   
     for mutation in mutation_list:
         index = int(mutation[1:-1])
@@ -55,7 +71,7 @@ def dfs_traversal_and_error_addition(current_node, leaf_ids, sample_leaf_nodes, 
     9. num_errors                 : number of errors to introduce in the sampled_leaf_node
     10. error_site_idx            : Possible error site chosen at random -> int
 
-    ERRORS
+    RANDOM ERRORS
     11. current_ref_base          : reference allele which has to be changed
     12. current_alt_base          : alternate allele chosen randomly based on transition probability matrix
     13. transition_counts         : transition counts (later probability) corresponding the `current_ref_base`
