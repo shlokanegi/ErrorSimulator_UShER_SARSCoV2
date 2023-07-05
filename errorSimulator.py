@@ -1,5 +1,6 @@
 '''
-Author  : Shloka Negi, shnegi@ucsc.edu
+Authors  : Abhishek Kumar, abhishekkumar.mat18@itbhu.ac.in
+           Shloka Negi, shnegi@ucsc.edu
 Purpose : Error Simulator which allows the addition of random errors, reversions or amplicon dropouts with contamination on simulated real trees
 Inputs  : MAT.pb (Mutation Annotated Tree Object)
         : Reference genome (or root sequence, if using a subtree)
